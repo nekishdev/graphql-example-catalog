@@ -7,14 +7,13 @@ import (
 	"strconv"
 )
 
-// Lets redefine the base ID type to use an id from an external library
+// ID
 func MarshalID(id uint) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		io.WriteString(w, strconv.Quote(fmt.Sprintf("%d", id)))
 	})
 }
 
-// And the same for the unmarshaler
 func UnmarshalID(v interface{}) (uint, error) {
 	id, ok := v.(string)
 	if !ok {

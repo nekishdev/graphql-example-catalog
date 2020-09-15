@@ -37,7 +37,6 @@ type Config struct {
 
 type ResolverRoot interface {
 	Mutation() MutationResolver
-	Product() ProductResolver
 	Query() QueryResolver
 }
 
@@ -77,9 +76,6 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	CreateProduct(ctx context.Context, input model.CreateProductInput) (*gorm_models.Product, error)
 	CreateCategory(ctx context.Context, input model.CreateCategoryInput) (*gorm_models.Category, error)
-}
-type ProductResolver interface {
-	Price(ctx context.Context, obj *gorm_models.Product) (string, error)
 }
 type QueryResolver interface {
 	Products(ctx context.Context, limit int, offset int) ([]*gorm_models.Product, error)
@@ -314,7 +310,7 @@ var sources = []*ast.Source{
   Name: String!
   Description: String!
   ImageSrc: String!
-  Price: String!
+  Price: Float!
   Category: Category
 }
 
@@ -369,7 +365,7 @@ func (ec *executionContext) field_Mutation_createCategory_args(ctx context.Conte
 	var arg0 model.CreateCategoryInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithFieldInputContext(ctx, graphql.NewFieldInputWithField("input"))
-		arg0, err = ec.unmarshalNCreateCategoryInput2githubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgraphᚋmodelᚐCreateCategoryInput(ctx, tmp)
+		arg0, err = ec.unmarshalNCreateCategoryInput2githubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgraphᚋmodelᚐCreateCategoryInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -384,7 +380,7 @@ func (ec *executionContext) field_Mutation_createProduct_args(ctx context.Contex
 	var arg0 model.CreateProductInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithFieldInputContext(ctx, graphql.NewFieldInputWithField("input"))
-		arg0, err = ec.unmarshalNCreateProductInput2githubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgraphᚋmodelᚐCreateProductInput(ctx, tmp)
+		arg0, err = ec.unmarshalNCreateProductInput2githubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgraphᚋmodelᚐCreateProductInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -698,7 +694,7 @@ func (ec *executionContext) _Mutation_createProduct(ctx context.Context, field g
 	}
 	res := resTmp.(*gorm_models.Product)
 	fc.Result = res
-	return ec.marshalNProduct2ᚖgithubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgorm_modelsᚐProduct(ctx, field.Selections, res)
+	return ec.marshalNProduct2ᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐProduct(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createCategory(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -739,7 +735,7 @@ func (ec *executionContext) _Mutation_createCategory(ctx context.Context, field 
 	}
 	res := resTmp.(*gorm_models.Category)
 	fc.Result = res
-	return ec.marshalNCategory2ᚖgithubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgorm_modelsᚐCategory(ctx, field.Selections, res)
+	return ec.marshalNCategory2ᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐCategory(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Product_Id(ctx context.Context, field graphql.CollectedField, obj *gorm_models.Product) (ret graphql.Marshaler) {
@@ -889,13 +885,13 @@ func (ec *executionContext) _Product_Price(ctx context.Context, field graphql.Co
 		Object:   "Product",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Product().Price(rctx, obj)
+		return obj.Price, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -907,9 +903,9 @@ func (ec *executionContext) _Product_Price(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(float64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Product_Category(ctx context.Context, field graphql.CollectedField, obj *gorm_models.Product) (ret graphql.Marshaler) {
@@ -940,7 +936,7 @@ func (ec *executionContext) _Product_Category(ctx context.Context, field graphql
 	}
 	res := resTmp.(gorm_models.Category)
 	fc.Result = res
-	return ec.marshalOCategory2githubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgorm_modelsᚐCategory(ctx, field.Selections, res)
+	return ec.marshalOCategory2githubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐCategory(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_products(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -981,7 +977,7 @@ func (ec *executionContext) _Query_products(ctx context.Context, field graphql.C
 	}
 	res := resTmp.([]*gorm_models.Product)
 	fc.Result = res
-	return ec.marshalNProduct2ᚕᚖgithubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgorm_modelsᚐProductᚄ(ctx, field.Selections, res)
+	return ec.marshalNProduct2ᚕᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐProductᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_product(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1022,7 +1018,7 @@ func (ec *executionContext) _Query_product(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(*gorm_models.Product)
 	fc.Result = res
-	return ec.marshalNProduct2ᚖgithubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgorm_modelsᚐProduct(ctx, field.Selections, res)
+	return ec.marshalNProduct2ᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐProduct(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_categories(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1063,7 +1059,7 @@ func (ec *executionContext) _Query_categories(ctx context.Context, field graphql
 	}
 	res := resTmp.([]*gorm_models.Category)
 	fc.Result = res
-	return ec.marshalNCategory2ᚕᚖgithubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgorm_modelsᚐCategoryᚄ(ctx, field.Selections, res)
+	return ec.marshalNCategory2ᚕᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐCategoryᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_category(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1104,7 +1100,7 @@ func (ec *executionContext) _Query_category(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*gorm_models.Category)
 	fc.Result = res
-	return ec.marshalNCategory2ᚖgithubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgorm_modelsᚐCategory(ctx, field.Selections, res)
+	return ec.marshalNCategory2ᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐCategory(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2419,37 +2415,28 @@ func (ec *executionContext) _Product(ctx context.Context, sel ast.SelectionSet, 
 		case "Id":
 			out.Values[i] = ec._Product_Id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "Name":
 			out.Values[i] = ec._Product_Name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "Description":
 			out.Values[i] = ec._Product_Description(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "ImageSrc":
 			out.Values[i] = ec._Product_ImageSrc(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "Price":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Product_Price(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+			out.Values[i] = ec._Product_Price(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "Category":
 			out.Values[i] = ec._Product_Category(ctx, field, obj)
 		default:
@@ -2809,11 +2796,11 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNCategory2githubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgorm_modelsᚐCategory(ctx context.Context, sel ast.SelectionSet, v gorm_models.Category) graphql.Marshaler {
+func (ec *executionContext) marshalNCategory2githubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐCategory(ctx context.Context, sel ast.SelectionSet, v gorm_models.Category) graphql.Marshaler {
 	return ec._Category(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNCategory2ᚕᚖgithubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgorm_modelsᚐCategoryᚄ(ctx context.Context, sel ast.SelectionSet, v []*gorm_models.Category) graphql.Marshaler {
+func (ec *executionContext) marshalNCategory2ᚕᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐCategoryᚄ(ctx context.Context, sel ast.SelectionSet, v []*gorm_models.Category) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -2837,7 +2824,7 @@ func (ec *executionContext) marshalNCategory2ᚕᚖgithubᚗcomᚋnekishdevᚋte
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNCategory2ᚖgithubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgorm_modelsᚐCategory(ctx, sel, v[i])
+			ret[i] = ec.marshalNCategory2ᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐCategory(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -2850,7 +2837,7 @@ func (ec *executionContext) marshalNCategory2ᚕᚖgithubᚗcomᚋnekishdevᚋte
 	return ret
 }
 
-func (ec *executionContext) marshalNCategory2ᚖgithubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgorm_modelsᚐCategory(ctx context.Context, sel ast.SelectionSet, v *gorm_models.Category) graphql.Marshaler {
+func (ec *executionContext) marshalNCategory2ᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐCategory(ctx context.Context, sel ast.SelectionSet, v *gorm_models.Category) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -2860,12 +2847,12 @@ func (ec *executionContext) marshalNCategory2ᚖgithubᚗcomᚋnekishdevᚋtest�
 	return ec._Category(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNCreateCategoryInput2githubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgraphᚋmodelᚐCreateCategoryInput(ctx context.Context, v interface{}) (model.CreateCategoryInput, error) {
+func (ec *executionContext) unmarshalNCreateCategoryInput2githubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgraphᚋmodelᚐCreateCategoryInput(ctx context.Context, v interface{}) (model.CreateCategoryInput, error) {
 	res, err := ec.unmarshalInputCreateCategoryInput(ctx, v)
 	return res, graphql.WrapErrorWithInputPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNCreateProductInput2githubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgraphᚋmodelᚐCreateProductInput(ctx context.Context, v interface{}) (model.CreateProductInput, error) {
+func (ec *executionContext) unmarshalNCreateProductInput2githubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgraphᚋmodelᚐCreateProductInput(ctx context.Context, v interface{}) (model.CreateProductInput, error) {
 	res, err := ec.unmarshalInputCreateProductInput(ctx, v)
 	return res, graphql.WrapErrorWithInputPath(ctx, err)
 }
@@ -2915,11 +2902,11 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) marshalNProduct2githubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgorm_modelsᚐProduct(ctx context.Context, sel ast.SelectionSet, v gorm_models.Product) graphql.Marshaler {
+func (ec *executionContext) marshalNProduct2githubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐProduct(ctx context.Context, sel ast.SelectionSet, v gorm_models.Product) graphql.Marshaler {
 	return ec._Product(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNProduct2ᚕᚖgithubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgorm_modelsᚐProductᚄ(ctx context.Context, sel ast.SelectionSet, v []*gorm_models.Product) graphql.Marshaler {
+func (ec *executionContext) marshalNProduct2ᚕᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐProductᚄ(ctx context.Context, sel ast.SelectionSet, v []*gorm_models.Product) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -2943,7 +2930,7 @@ func (ec *executionContext) marshalNProduct2ᚕᚖgithubᚗcomᚋnekishdevᚋtes
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNProduct2ᚖgithubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgorm_modelsᚐProduct(ctx, sel, v[i])
+			ret[i] = ec.marshalNProduct2ᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐProduct(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -2956,7 +2943,7 @@ func (ec *executionContext) marshalNProduct2ᚕᚖgithubᚗcomᚋnekishdevᚋtes
 	return ret
 }
 
-func (ec *executionContext) marshalNProduct2ᚖgithubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgorm_modelsᚐProduct(ctx context.Context, sel ast.SelectionSet, v *gorm_models.Product) graphql.Marshaler {
+func (ec *executionContext) marshalNProduct2ᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐProduct(ctx context.Context, sel ast.SelectionSet, v *gorm_models.Product) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -3234,7 +3221,7 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return graphql.MarshalBoolean(*v)
 }
 
-func (ec *executionContext) marshalOCategory2githubᚗcomᚋnekishdevᚋtestᚑgraphqlᚋgorm_modelsᚐCategory(ctx context.Context, sel ast.SelectionSet, v gorm_models.Category) graphql.Marshaler {
+func (ec *executionContext) marshalOCategory2githubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐCategory(ctx context.Context, sel ast.SelectionSet, v gorm_models.Category) graphql.Marshaler {
 	return ec._Category(ctx, sel, &v)
 }
 

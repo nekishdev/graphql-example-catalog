@@ -3,7 +3,7 @@ type Product {
   Name: String!
   Description: String!
   ImageSrc: String!
-  Price: String!
+  Price: Float!
   Category: Category
 }
 

@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nekishdev/graphql-example-catalog/db"
 	"github.com/nekishdev/graphql-example-catalog/gorm_models"
@@ -51,10 +50,6 @@ func (r *mutationResolver) CreateCategory(ctx context.Context, input model.Creat
 	}
 
 	return category, nil
-}
-
-func (r *productResolver) Price(ctx context.Context, obj *gorm_models.Product) (string, error) {
-	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *queryResolver) Products(ctx context.Context, limit int, offset int) ([]*gorm_models.Product, error) {
@@ -122,12 +117,8 @@ func (r *queryResolver) Category(ctx context.Context, id uint) (*gorm_models.Cat
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
-// Product returns generated.ProductResolver implementation.
-func (r *Resolver) Product() generated.ProductResolver { return &productResolver{r} }
-
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
-type productResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

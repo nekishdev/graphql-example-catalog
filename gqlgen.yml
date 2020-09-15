@@ -57,7 +57,3 @@ models:
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
-
-  SomeInput:
-    model:
-      - github.com/nekishdev/graphql-example-catalog/gorm_models.SomeInput
