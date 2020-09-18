@@ -5,6 +5,20 @@ type Product {
   ImageSrc: String!
   Price: Float!
   Category: Category
+  Properties: [ProductProperty]
+}
+
+type ProductProperty {
+  Id: ID!
+  Value: String!
+  Property: Property!
+}
+
+type Property {
+  Id: ID!
+  Name: String!
+  Code: String!
+  Required: Boolean!
 }
 
 type Category {
@@ -16,12 +30,18 @@ type Category {
 
 # Input
 # ======
+input ProductPropertyValueInput {
+  PropertyID: ID!
+  Value: String!
+}
+
 input CreateProductInput {
   Name: String!
   Description: String!
   ImageSrc: String!
   Price: Float!
-  CategoryID: ID
+  CategoryID: ID,
+  Properties: [ProductPropertyValueInput]
 }
 
 input CreateCategoryInput {
@@ -29,19 +49,29 @@ input CreateCategoryInput {
   Description: String!
   ImageSrc: String!
 }
+
+input CreateProductProperty {
+  Name: String!
+  Code: String!
+  Required: Boolean!
+}
 # ======
 
 # Query
 # ======
 type Query {
-  products(limit:Int!, offset:Int!): [Product!]!
+  products(categoryId: Int, limit:Int!, offset:Int!): [Product!]!
   product(id:ID!): Product!
+
   categories(limit:Int!, offset:Int!): [Category!]!
   category(id:ID!): Category!
+
+  productProperties: [Property!]!
 }
 # ======
 
 type Mutation {
   createProduct(input: CreateProductInput!): Product!
   createCategory(input: CreateCategoryInput!): Category!
+  createProductProperty(input: CreateProductProperty!): Property!
 }

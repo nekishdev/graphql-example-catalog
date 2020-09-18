@@ -52,8 +52,9 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateCategory func(childComplexity int, input model.CreateCategoryInput) int
-		CreateProduct  func(childComplexity int, input model.CreateProductInput) int
+		CreateCategory        func(childComplexity int, input model.CreateCategoryInput) int
+		CreateProduct         func(childComplexity int, input model.CreateProductInput) int
+		CreateProductProperty func(childComplexity int, input model.CreateProductProperty) int
 	}
 
 	Product struct {
@@ -63,25 +64,42 @@ type ComplexityRoot struct {
 		ImageSrc    func(childComplexity int) int
 		Name        func(childComplexity int) int
 		Price       func(childComplexity int) int
+		Properties  func(childComplexity int) int
+	}
+
+	ProductProperty struct {
+		ID       func(childComplexity int) int
+		Property func(childComplexity int) int
+		Value    func(childComplexity int) int
+	}
+
+	Property struct {
+		Code     func(childComplexity int) int
+		ID       func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Required func(childComplexity int) int
 	}
 
 	Query struct {
-		Categories func(childComplexity int, limit int, offset int) int
-		Category   func(childComplexity int, id uint) int
-		Product    func(childComplexity int, id uint) int
-		Products   func(childComplexity int, limit int, offset int) int
+		Categories        func(childComplexity int, limit int, offset int) int
+		Category          func(childComplexity int, id uint) int
+		Product           func(childComplexity int, id uint) int
+		ProductProperties func(childComplexity int) int
+		Products          func(childComplexity int, categoryID *int, limit int, offset int) int
 	}
 }
 
 type MutationResolver interface {
 	CreateProduct(ctx context.Context, input model.CreateProductInput) (*gorm_models.Product, error)
 	CreateCategory(ctx context.Context, input model.CreateCategoryInput) (*gorm_models.Category, error)
+	CreateProductProperty(ctx context.Context, input model.CreateProductProperty) (*gorm_models.Property, error)
 }
 type QueryResolver interface {
-	Products(ctx context.Context, limit int, offset int) ([]*gorm_models.Product, error)
+	Products(ctx context.Context, categoryID *int, limit int, offset int) ([]*gorm_models.Product, error)
 	Product(ctx context.Context, id uint) (*gorm_models.Product, error)
 	Categories(ctx context.Context, limit int, offset int) ([]*gorm_models.Category, error)
 	Category(ctx context.Context, id uint) (*gorm_models.Category, error)
+	ProductProperties(ctx context.Context) ([]*gorm_models.Property, error)
 }
 
 type executableSchema struct {
@@ -151,6 +169,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateProduct(childComplexity, args["input"].(model.CreateProductInput)), true
 
+	case "Mutation.createProductProperty":
+		if e.complexity.Mutation.CreateProductProperty == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createProductProperty_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateProductProperty(childComplexity, args["input"].(model.CreateProductProperty)), true
+
 	case "Product.Category":
 		if e.complexity.Product.Category == nil {
 			break
@@ -193,6 +223,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Product.Price(childComplexity), true
 
+	case "Product.Properties":
+		if e.complexity.Product.Properties == nil {
+			break
+		}
+
+		return e.complexity.Product.Properties(childComplexity), true
+
+	case "ProductProperty.Id":
+		if e.complexity.ProductProperty.ID == nil {
+			break
+		}
+
+		return e.complexity.ProductProperty.ID(childComplexity), true
+
+	case "ProductProperty.Property":
+		if e.complexity.ProductProperty.Property == nil {
+			break
+		}
+
+		return e.complexity.ProductProperty.Property(childComplexity), true
+
+	case "ProductProperty.Value":
+		if e.complexity.ProductProperty.Value == nil {
+			break
+		}
+
+		return e.complexity.ProductProperty.Value(childComplexity), true
+
+	case "Property.Code":
+		if e.complexity.Property.Code == nil {
+			break
+		}
+
+		return e.complexity.Property.Code(childComplexity), true
+
+	case "Property.Id":
+		if e.complexity.Property.ID == nil {
+			break
+		}
+
+		return e.complexity.Property.ID(childComplexity), true
+
+	case "Property.Name":
+		if e.complexity.Property.Name == nil {
+			break
+		}
+
+		return e.complexity.Property.Name(childComplexity), true
+
+	case "Property.Required":
+		if e.complexity.Property.Required == nil {
+			break
+		}
+
+		return e.complexity.Property.Required(childComplexity), true
+
 	case "Query.categories":
 		if e.complexity.Query.Categories == nil {
 			break
@@ -229,6 +315,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Product(childComplexity, args["id"].(uint)), true
 
+	case "Query.productProperties":
+		if e.complexity.Query.ProductProperties == nil {
+			break
+		}
+
+		return e.complexity.Query.ProductProperties(childComplexity), true
+
 	case "Query.products":
 		if e.complexity.Query.Products == nil {
 			break
@@ -239,7 +332,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Products(childComplexity, args["limit"].(int), args["offset"].(int)), true
+		return e.complexity.Query.Products(childComplexity, args["categoryId"].(*int), args["limit"].(int), args["offset"].(int)), true
 
 	}
 	return 0, false
@@ -312,6 +405,20 @@ var sources = []*ast.Source{
   ImageSrc: String!
   Price: Float!
   Category: Category
+  Properties: [ProductProperty]
+}
+
+type ProductProperty {
+  Id: ID!
+  Value: String!
+  Property: Property!
+}
+
+type Property {
+  Id: ID!
+  Name: String!
+  Code: String!
+  Required: Boolean!
 }
 
 type Category {
@@ -323,12 +430,18 @@ type Category {
 
 # Input
 # ======
+input ProductPropertyValueInput {
+  PropertyID: ID!
+  Value: String!
+}
+
 input CreateProductInput {
   Name: String!
   Description: String!
   ImageSrc: String!
   Price: Float!
-  CategoryID: ID
+  CategoryID: ID,
+  Properties: [ProductPropertyValueInput]
 }
 
 input CreateCategoryInput {
@@ -336,21 +449,31 @@ input CreateCategoryInput {
   Description: String!
   ImageSrc: String!
 }
+
+input CreateProductProperty {
+  Name: String!
+  Code: String!
+  Required: Boolean!
+}
 # ======
 
 # Query
 # ======
 type Query {
-  products(limit:Int!, offset:Int!): [Product!]!
+  products(categoryId: Int, limit:Int!, offset:Int!): [Product!]!
   product(id:ID!): Product!
+
   categories(limit:Int!, offset:Int!): [Category!]!
   category(id:ID!): Category!
+
+  productProperties: [Property!]!
 }
 # ======
 
 type Mutation {
   createProduct(input: CreateProductInput!): Product!
   createCategory(input: CreateCategoryInput!): Category!
+  createProductProperty(input: CreateProductProperty!): Property!
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -366,6 +489,21 @@ func (ec *executionContext) field_Mutation_createCategory_args(ctx context.Conte
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithFieldInputContext(ctx, graphql.NewFieldInputWithField("input"))
 		arg0, err = ec.unmarshalNCreateCategoryInput2githubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgraphᚋmodelᚐCreateCategoryInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createProductProperty_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.CreateProductProperty
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithFieldInputContext(ctx, graphql.NewFieldInputWithField("input"))
+		arg0, err = ec.unmarshalNCreateProductProperty2githubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgraphᚋmodelᚐCreateProductProperty(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -461,24 +599,33 @@ func (ec *executionContext) field_Query_product_args(ctx context.Context, rawArg
 func (ec *executionContext) field_Query_products_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["limit"]; ok {
-		ctx := graphql.WithFieldInputContext(ctx, graphql.NewFieldInputWithField("limit"))
-		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+	var arg0 *int
+	if tmp, ok := rawArgs["categoryId"]; ok {
+		ctx := graphql.WithFieldInputContext(ctx, graphql.NewFieldInputWithField("categoryId"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["limit"] = arg0
+	args["categoryId"] = arg0
 	var arg1 int
-	if tmp, ok := rawArgs["offset"]; ok {
-		ctx := graphql.WithFieldInputContext(ctx, graphql.NewFieldInputWithField("offset"))
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithFieldInputContext(ctx, graphql.NewFieldInputWithField("limit"))
 		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["offset"] = arg1
+	args["limit"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["offset"]; ok {
+		ctx := graphql.WithFieldInputContext(ctx, graphql.NewFieldInputWithField("offset"))
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["offset"] = arg2
 	return args, nil
 }
 
@@ -738,6 +885,47 @@ func (ec *executionContext) _Mutation_createCategory(ctx context.Context, field 
 	return ec.marshalNCategory2ᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐCategory(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_createProductProperty(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createProductProperty_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateProductProperty(rctx, args["input"].(model.CreateProductProperty))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*gorm_models.Property)
+	fc.Result = res
+	return ec.marshalNProperty2ᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐProperty(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Product_Id(ctx context.Context, field graphql.CollectedField, obj *gorm_models.Product) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -939,6 +1127,275 @@ func (ec *executionContext) _Product_Category(ctx context.Context, field graphql
 	return ec.marshalOCategory2githubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐCategory(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Product_Properties(ctx context.Context, field graphql.CollectedField, obj *gorm_models.Product) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Product",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Properties, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]gorm_models.ProductProperty)
+	fc.Result = res
+	return ec.marshalOProductProperty2ᚕgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐProductProperty(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProductProperty_Id(ctx context.Context, field graphql.CollectedField, obj *gorm_models.ProductProperty) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ProductProperty",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uint)
+	fc.Result = res
+	return ec.marshalNID2uint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProductProperty_Value(ctx context.Context, field graphql.CollectedField, obj *gorm_models.ProductProperty) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ProductProperty",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProductProperty_Property(ctx context.Context, field graphql.CollectedField, obj *gorm_models.ProductProperty) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ProductProperty",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Property, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(gorm_models.Property)
+	fc.Result = res
+	return ec.marshalNProperty2githubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐProperty(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Property_Id(ctx context.Context, field graphql.CollectedField, obj *gorm_models.Property) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Property",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uint)
+	fc.Result = res
+	return ec.marshalNID2uint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Property_Name(ctx context.Context, field graphql.CollectedField, obj *gorm_models.Property) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Property",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Property_Code(ctx context.Context, field graphql.CollectedField, obj *gorm_models.Property) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Property",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Code, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Property_Required(ctx context.Context, field graphql.CollectedField, obj *gorm_models.Property) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Property",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Required, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_products(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -963,7 +1420,7 @@ func (ec *executionContext) _Query_products(ctx context.Context, field graphql.C
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Products(rctx, args["limit"].(int), args["offset"].(int))
+		return ec.resolvers.Query().Products(rctx, args["categoryId"].(*int), args["limit"].(int), args["offset"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1101,6 +1558,40 @@ func (ec *executionContext) _Query_category(ctx context.Context, field graphql.C
 	res := resTmp.(*gorm_models.Category)
 	fc.Result = res
 	return ec.marshalNCategory2ᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐCategory(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_productProperties(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ProductProperties(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*gorm_models.Property)
+	fc.Result = res
+	return ec.marshalNProperty2ᚕᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐPropertyᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2309,6 +2800,78 @@ func (ec *executionContext) unmarshalInputCreateProductInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
+		case "Properties":
+			var err error
+
+			ctx := graphql.WithFieldInputContext(ctx, graphql.NewFieldInputWithField("Properties"))
+			it.Properties, err = ec.unmarshalOProductPropertyValueInput2ᚕᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgraphᚋmodelᚐProductPropertyValueInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCreateProductProperty(ctx context.Context, obj interface{}) (model.CreateProductProperty, error) {
+	var it model.CreateProductProperty
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "Name":
+			var err error
+
+			ctx := graphql.WithFieldInputContext(ctx, graphql.NewFieldInputWithField("Name"))
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "Code":
+			var err error
+
+			ctx := graphql.WithFieldInputContext(ctx, graphql.NewFieldInputWithField("Code"))
+			it.Code, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "Required":
+			var err error
+
+			ctx := graphql.WithFieldInputContext(ctx, graphql.NewFieldInputWithField("Required"))
+			it.Required, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputProductPropertyValueInput(ctx context.Context, obj interface{}) (model.ProductPropertyValueInput, error) {
+	var it model.ProductPropertyValueInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "PropertyID":
+			var err error
+
+			ctx := graphql.WithFieldInputContext(ctx, graphql.NewFieldInputWithField("PropertyID"))
+			it.PropertyID, err = ec.unmarshalNID2uint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "Value":
+			var err error
+
+			ctx := graphql.WithFieldInputContext(ctx, graphql.NewFieldInputWithField("Value"))
+			it.Value, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -2390,6 +2953,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "createProductProperty":
+			out.Values[i] = ec._Mutation_createProductProperty(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2439,6 +3007,87 @@ func (ec *executionContext) _Product(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "Category":
 			out.Values[i] = ec._Product_Category(ctx, field, obj)
+		case "Properties":
+			out.Values[i] = ec._Product_Properties(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var productPropertyImplementors = []string{"ProductProperty"}
+
+func (ec *executionContext) _ProductProperty(ctx context.Context, sel ast.SelectionSet, obj *gorm_models.ProductProperty) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, productPropertyImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProductProperty")
+		case "Id":
+			out.Values[i] = ec._ProductProperty_Id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "Value":
+			out.Values[i] = ec._ProductProperty_Value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "Property":
+			out.Values[i] = ec._ProductProperty_Property(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var propertyImplementors = []string{"Property"}
+
+func (ec *executionContext) _Property(ctx context.Context, sel ast.SelectionSet, obj *gorm_models.Property) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, propertyImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Property")
+		case "Id":
+			out.Values[i] = ec._Property_Id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "Name":
+			out.Values[i] = ec._Property_Name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "Code":
+			out.Values[i] = ec._Property_Code(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "Required":
+			out.Values[i] = ec._Property_Required(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2516,6 +3165,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_category(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "productProperties":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_productProperties(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -2857,6 +3520,11 @@ func (ec *executionContext) unmarshalNCreateProductInput2githubᚗcomᚋnekishde
 	return res, graphql.WrapErrorWithInputPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateProductProperty2githubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgraphᚋmodelᚐCreateProductProperty(ctx context.Context, v interface{}) (model.CreateProductProperty, error) {
+	res, err := ec.unmarshalInputCreateProductProperty(ctx, v)
+	return res, graphql.WrapErrorWithInputPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
 	res, err := graphql.UnmarshalFloat(v)
 	return res, graphql.WrapErrorWithInputPath(ctx, err)
@@ -2951,6 +3619,57 @@ func (ec *executionContext) marshalNProduct2ᚖgithubᚗcomᚋnekishdevᚋgraphq
 		return graphql.Null
 	}
 	return ec._Product(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNProperty2githubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐProperty(ctx context.Context, sel ast.SelectionSet, v gorm_models.Property) graphql.Marshaler {
+	return ec._Property(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNProperty2ᚕᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐPropertyᚄ(ctx context.Context, sel ast.SelectionSet, v []*gorm_models.Property) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNProperty2ᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐProperty(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNProperty2ᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐProperty(ctx context.Context, sel ast.SelectionSet, v *gorm_models.Property) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Property(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -3238,6 +3957,97 @@ func (ec *executionContext) marshalOID2ᚖuint(ctx context.Context, sel ast.Sele
 		return graphql.Null
 	}
 	return gorm_models.MarshalID(*v)
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.WrapErrorWithInputPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalInt(*v)
+}
+
+func (ec *executionContext) marshalOProductProperty2githubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐProductProperty(ctx context.Context, sel ast.SelectionSet, v gorm_models.ProductProperty) graphql.Marshaler {
+	return ec._ProductProperty(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOProductProperty2ᚕgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐProductProperty(ctx context.Context, sel ast.SelectionSet, v []gorm_models.ProductProperty) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOProductProperty2githubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgorm_modelsᚐProductProperty(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) unmarshalOProductPropertyValueInput2ᚕᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgraphᚋmodelᚐProductPropertyValueInput(ctx context.Context, v interface{}) ([]*model.ProductPropertyValueInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.ProductPropertyValueInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithFieldInputContext(ctx, graphql.NewFieldInputWithIndex(i))
+		res[i], err = ec.unmarshalOProductPropertyValueInput2ᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgraphᚋmodelᚐProductPropertyValueInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, graphql.WrapErrorWithInputPath(ctx, err)
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOProductPropertyValueInput2ᚖgithubᚗcomᚋnekishdevᚋgraphqlᚑexampleᚑcatalogᚋgraphᚋmodelᚐProductPropertyValueInput(ctx context.Context, v interface{}) (*model.ProductPropertyValueInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputProductPropertyValueInput(ctx, v)
+	return &res, graphql.WrapErrorWithInputPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

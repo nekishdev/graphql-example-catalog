@@ -46,9 +46,16 @@ models:
   Product:
     model:
       - github.com/nekishdev/graphql-example-catalog/gorm_models.Product
+  ProductProperty:
+    model:
+      - github.com/nekishdev/graphql-example-catalog/gorm_models.ProductProperty
+  Property:
+    model:
+      - github.com/nekishdev/graphql-example-catalog/gorm_models.Property
   Category:
     model:
       - github.com/nekishdev/graphql-example-catalog/gorm_models.Category
+
   ID:
     model:
       - github.com/nekishdev/graphql-example-catalog/gorm_models.ID

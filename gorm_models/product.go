@@ -12,8 +12,24 @@ type Product struct {
 	ImageSrc    string
 	Price       float64
 	CategoryID  uint
-	Category    Category `gorm:"joinForeignKey:CategoryID"`
+	Category    Category          `gorm:"joinForeignKey:CategoryID"`
+	Properties  []ProductProperty `gorm:"foreignKey:ProductID;"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   gorm.DeletedAt `gorm:"index"`
+}
+
+type ProductProperty struct {
+	ID         uint `gorm:"primarykey"`
+	ProductID  uint
+	PropertyID uint
+	Property   Property `gorm:"joinForeignKey:PropertyID"`
+	Value      string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	DeletedAt  gorm.DeletedAt `gorm:"index"`
+}
+
+func (ProductProperty) TableName() string {
+	return "product_properties"
 }

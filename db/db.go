@@ -41,6 +41,8 @@ func init() {
 	db.Debug().AutoMigrate(
 		&gorm_models.Product{},
 		&gorm_models.Category{},
+		&gorm_models.Property{},
+		&gorm_models.ProductProperty{},
 	)
 }
 
