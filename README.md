@@ -1,6 +1,6 @@
 Load dependencies:
 
-`go get -u ./...`
+`go mod vendor`
 
 Start server:
 
