@@ -1,3 +1,6 @@
+scalar Map
+scalar Any
+
 type Product {
   Id: ID!
   Name: String!
@@ -5,20 +8,19 @@ type Product {
   ImageSrc: String!
   Price: Float!
   Category: Category
-  Properties: [ProductProperty]
+  Properties: [ProductPropertyValue]
 }
 
 type ProductProperty {
-  Id: ID!
-  Value: String!
-  Property: Property!
+  Code: String!
+  Name: String!
+  Required: Boolean!
 }
 
-type Property {
-  Id: ID!
-  Name: String!
-  Code: String!
-  Required: Boolean!
+type ProductPropertyValue {
+  PropertyCode: String!
+  Value: String!
+  Property: ProductProperty!
 }
 
 type Category {
@@ -31,7 +33,7 @@ type Category {
 # Input
 # ======
 input ProductPropertyValueInput {
-  PropertyID: ID!
+  Code: String!
   Value: String!
 }
 
@@ -41,6 +43,15 @@ input CreateProductInput {
   ImageSrc: String!
   Price: Float!
   CategoryID: ID,
+  Properties: [ProductPropertyValueInput]
+}
+
+input UpdateProductInput {
+  Name: String
+  Description: String
+  ImageSrc: String
+  Price: Float
+  CategoryID: ID
   Properties: [ProductPropertyValueInput]
 }
 
@@ -55,23 +66,38 @@ input CreateProductProperty {
   Code: String!
   Required: Boolean!
 }
+
+input ProductFilterCondition {
+  By: String!
+  Field: String!
+  Operator: String!
+  Value: Any!
+}
+input ProductFilter {
+  Conditions: [ProductFilterCondition!]!
+}
 # ======
+
 
 # Query
 # ======
 type Query {
-  products(categoryId: Int, limit:Int!, offset:Int!): [Product!]!
+  products(limit:Int!, offset:Int!, filter:ProductFilter): [Product!]!
   product(id:ID!): Product!
 
   categories(limit:Int!, offset:Int!): [Category!]!
   category(id:ID!): Category!
 
-  productProperties: [Property!]!
+  productProperties: [ProductProperty!]!
 }
 # ======
 
 type Mutation {
   createProduct(input: CreateProductInput!): Product!
+  updateProduct(id: ID!, input: UpdateProductInput!): Product!
+  deleteProduct(id: ID!): Boolean!
+
   createCategory(input: CreateCategoryInput!): Category!
-  createProductProperty(input: CreateProductProperty!): Property!
+
+  createProductProperty(input: CreateProductProperty!): ProductProperty!
 }

@@ -49,12 +49,28 @@ models:
   ProductProperty:
     model:
       - github.com/nekishdev/graphql-example-catalog/gorm_models.ProductProperty
-  Property:
+  ProductPropertyValue:
     model:
-      - github.com/nekishdev/graphql-example-catalog/gorm_models.Property
+      - github.com/nekishdev/graphql-example-catalog/gorm_models.ProductPropertyValue
+
   Category:
     model:
       - github.com/nekishdev/graphql-example-catalog/gorm_models.Category
+
+  UpdateProductInput:
+    model:
+      - github.com/nekishdev/graphql-example-catalog/graph/model.ProductFillable
+  CreateProductInput:
+    model:
+      - github.com/nekishdev/graphql-example-catalog/graph/model.ProductFillable
+  ProductPropertyValueInput:
+    model:
+      - github.com/nekishdev/graphql-example-catalog/graph/model.ProductPropertyValueInput
+  ProductFilter:
+    model:
+      - github.com/nekishdev/graphql-example-catalog/graph/model.ProductFilter
+
+
 
   ID:
     model:
